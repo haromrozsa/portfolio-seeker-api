@@ -5,16 +5,24 @@ var cheerio = require('cheerio');
 var express = require('express');
 var cors = require('cors');
 var app = express();
+var scheduler = require('node-schedule');
+var api_key = process.env.MAILGUN_API_KEY;
+var domain = 'sandbox21dd732e255747b48e88245c204feda6.mailgun.org';
+var mailgun = require('mailgun-js')({apiKey: api_key, domain: domain});
 
 var url = 'https://forum.portfolio.hu/topics/opus-global-nyrt/25754?limit=100'
 //var url = 'https://forum.portfolio.hu/topics/opus-global-nyrt/25754?oldal=453&limit=100'
 
-
 https.get(url, function(response) {
   console.log("Loaded " + url);
-  console.log("Status OK");
   //parseResponse(response);
-})
+});
+var date = new Date();
+//var montlyJob = scheduler.scheduleJob('*/1 * * * *', function() {
+// console.log('I run the first day of the month ' + date.getFullYear() + " " + date.getMonth() + " " + date.getDate());
+//});
+
+
 var siteNumber;
 var tags = [];
 var tagsCount = {};
@@ -100,11 +108,28 @@ app.get('/opus', cors(), function (req, res, next) {
 
 app.get('/', cors(), function (req, res, next) {
   console.log("Request arrived OK");
+  res.json('Request arrived OK');
+});
+
+var emaildata = {
+  from: 'Excited User <me@samples.mailgun.org>',
+  to: 'haromrozsa@gmail.com',
+  subject: 'Hello',
+  text: 'Testing some Mailgun awesomness!'
+};
+
+app.get('/email', cors(), function (req, res, next) {
+  console.log("Start sending email");
+	mailgun.messages().send(emaildata, function (error, body) {
+	  console.log(body);
+	});
+  res.json('Email sent');
 });
  
 const port = process.env.PORT || 8081; 
 app.listen(port, function () {
-  console.log('CORS-enabled web server listening on port')
+  console.log('CORS-enabled web server listening, date: ' + date.getFullYear() + "." + date.getMonth() + "." + date.getDate() + " " + date.getHours() + ":" + date.getMinutes());
+
 });
 /*http.createServer(function (request, response) {
    // Send the HTTP header 

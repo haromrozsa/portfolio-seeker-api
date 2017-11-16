@@ -17,6 +17,8 @@
     "cors": "2.8.4",
     "express": "4.16.2",
     "htmlparser2": "3.9.2",
+    "mailgun-js": "0.13.1",
+    "node-schedule": "1.2.5",
     "nodemon": "1.12.1"
   },
   "keywords": [
