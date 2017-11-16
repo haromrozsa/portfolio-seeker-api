@@ -18,9 +18,19 @@ https.get(url, function(response) {
   //parseResponse(response);
 });
 var date = new Date();
-//var montlyJob = scheduler.scheduleJob('*/1 * * * *', function() {
-// console.log('I run the first day of the month ' + date.getFullYear() + " " + date.getMonth() + " " + date.getDate());
-//});
+var dateFormated = date.getFullYear() + "." + date.getMonth() + "." + date.getDate() + " " + date.getHours() + ":" + date.getMinutes();
+var montlyJob = scheduler.scheduleJob('*/1 * * * *', function() {
+ console.log('I am going to send an email on ' + dateFormated);
+ var scheduledEmaildata = {
+    from: 'Excited User <me@samples.mailgun.org>',
+    to: 'haromrozsa@gmail.com',
+    subject: 'Hello ' + dateFormated,
+    text: 'Testing some Mailgun awesomness!'
+  };
+  mailgun.messages().send(scheduledEmaildata, function (error, body) {
+	  console.log(body);
+  });
+});
 
 
 var siteNumber;
@@ -128,8 +138,7 @@ app.get('/email', cors(), function (req, res, next) {
  
 const port = process.env.PORT || 8081; 
 app.listen(port, function () {
-  console.log('CORS-enabled web server listening, date: ' + date.getFullYear() + "." + date.getMonth() + "." + date.getDate() + " " + date.getHours() + ":" + date.getMinutes());
-
+  console.log('CORS-enabled web server listening, date: ' + dateFormated);
 });
 /*http.createServer(function (request, response) {
    // Send the HTTP header 
