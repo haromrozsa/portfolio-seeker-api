@@ -21,13 +21,9 @@ var date = new Date();
 var dateFormated = date.getFullYear() + "." + date.getMonth() + "." + date.getDate() + " " + date.getHours() + ":" + date.getMinutes();
 var montlyJob = scheduler.scheduleJob('*/1 * * * *', function() {
  console.log('I am going to send an email on ' + dateFormated);
- var scheduledEmaildata = {
-    from: 'Excited User <me@samples.mailgun.org>',
-    to: 'haromrozsa@gmail.com',
-    subject: 'Hello ' + dateFormated,
-    text: 'Testing some Mailgun awesomness!'
-  };
-  mailgun.messages().send(scheduledEmaildata, function (error, body) {
+  var dateNew = new Date();
+  emaildata.subject = 'Hello ' + dateNew.getFullYear() + "." + dateNew.getMonth() + "." + dateNew.getDate() + " " + dateNew.getHours() + ":" + dateNew.getMinutes();
+  mailgun.messages().send(emaildata, function (error, body) {
 	  console.log(body);
   });
 });
