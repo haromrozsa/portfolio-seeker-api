@@ -12,6 +12,7 @@ var url = 'https://forum.portfolio.hu/topics/opus-global-nyrt/25754?limit=100'
 
 https.get(url, function(response) {
   console.log("Loaded " + url);
+  console.log("Status OK");
   //parseResponse(response);
 })
 var siteNumber;
@@ -97,8 +98,8 @@ app.get('/opus', cors(), function (req, res, next) {
   //res.json({msg: 'This is CORS-enabled for a Single Route'})
 });
  
-app.listen(8081, function () {
-  console.log('CORS-enabled web server listening on port 8081')
+app.listen(3090, function () {
+  console.log('CORS-enabled web server listening on port 3090')
 });
 /*http.createServer(function (request, response) {
    // Send the HTTP header 
