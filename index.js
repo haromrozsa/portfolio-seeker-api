@@ -97,6 +97,10 @@ app.get('/opus', cors(), function (req, res, next) {
   res.json(JSON.stringify(tagsWithCount));
   //res.json({msg: 'This is CORS-enabled for a Single Route'})
 });
+
+app.get('/', cors(), function (req, res, next) {
+  console.log("Request arrived OK");
+});
  
 app.listen(3090, function () {
   console.log('CORS-enabled web server listening on port 3090')
