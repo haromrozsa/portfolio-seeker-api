@@ -102,8 +102,9 @@ app.get('/', cors(), function (req, res, next) {
   console.log("Request arrived OK");
 });
  
-app.listen(3090, function () {
-  console.log('CORS-enabled web server listening on port 3090')
+const port = process.env.PORT || 8081; 
+app.listen(port, function () {
+  console.log('CORS-enabled web server listening on port')
 });
 /*http.createServer(function (request, response) {
    // Send the HTTP header 
