@@ -24,7 +24,7 @@ var sendEmail = function(result) {
 
 var date = new Date();
 var dateFormated = date.getFullYear() + "." + date.getMonth() + "." + date.getDate() + " " + date.getHours() + ":" + date.getMinutes();
-var montlyJob = scheduler.scheduleJob('33 21 * * *', function() { //*/1 * * * *
+var montlyJob = scheduler.scheduleJob('37 21 * * *', function() { //*/1 * * * *
  console.log('I am going to send an email on ' + dateFormated);
 
   https.get(url, function(response) {
@@ -46,7 +46,6 @@ var parseResponse = function(response) {
   response.on('data', function(chunk) {
     data += chunk;
   });
-sendEmail("TEST MIVAN");
   response.on('end', function(chunk) {
 	//console.log(data);
 	$ = cheerio.load(data);
@@ -96,7 +95,7 @@ sendEmail("TEST MIVAN");
 		var result = JSON.stringify(tagsWithCount);
 	    //console.log(tagsWithCount[0].count);
 		console.log(result); 
-		//callback(result);
+		sendEmail(result);
 		/*var obj = JSON.parse(result);
 		var objdates = [];
 		var objcounter = [];
