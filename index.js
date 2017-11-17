@@ -24,7 +24,7 @@ var sendEmail = function(result) {
 
 var date = new Date();
 var dateFormated = date.getFullYear() + "." + date.getMonth() + "." + date.getDate() + " " + date.getHours() + ":" + date.getMinutes();
-var montlyJob = scheduler.scheduleJob('37 21 * * *', function() { //*/1 * * * *
+var montlyJob = scheduler.scheduleJob('10 01 * * *', function() { //*/1 * * * *
  console.log('I am going to send an email on ' + dateFormated);
 
   https.get(url, function(response) {
@@ -78,7 +78,7 @@ var parseResponse = function(response) {
 	  //fruits[i] = $(this).text();
 	});
 	
-	if (siteNumber > 558) {
+	if (siteNumber > 0) {
 		//console.log(siteNumber);
 		var newUrl = url + "&oldal=" + siteNumber;
 		console.log(newUrl);
