@@ -19,7 +19,7 @@ https.get(url, function(response) {
 });
 var date = new Date();
 var dateFormated = date.getFullYear() + "." + date.getMonth() + "." + date.getDate() + " " + date.getHours() + ":" + date.getMinutes();
-var montlyJob = scheduler.scheduleJob('0 0 * * *', function() { //*/1 * * * *
+var montlyJob = scheduler.scheduleJob('0 20 * * *', function() { //*/1 * * * *
  console.log('I am going to send an email on ' + dateFormated);
   var dateNew = new Date();
   emaildata.subject = 'Hello ' + dateNew.getFullYear() + "." + dateNew.getMonth() + "." + dateNew.getDate() + " " + dateNew.getHours() + ":" + dateNew.getMinutes();
