@@ -13,19 +13,25 @@ var mailgun = require('mailgun-js')({apiKey: api_key, domain: domain});
 var url = 'https://forum.portfolio.hu/topics/opus-global-nyrt/25754?limit=100'
 //var url = 'https://forum.portfolio.hu/topics/opus-global-nyrt/25754?oldal=453&limit=100'
 
-https.get(url, function(response) {
-  console.log("Loaded " + url);
-  //parseResponse(response);
-});
+
 var date = new Date();
 var dateFormated = date.getFullYear() + "." + date.getMonth() + "." + date.getDate() + " " + date.getHours() + ":" + date.getMinutes();
-var montlyJob = scheduler.scheduleJob('0 20 * * *', function() { //*/1 * * * *
+var montlyJob = scheduler.scheduleJob('48 20 * * *', function() { //*/1 * * * *
  console.log('I am going to send an email on ' + dateFormated);
-  var dateNew = new Date();
-  emaildata.subject = 'Hello ' + dateNew.getFullYear() + "." + dateNew.getMonth() + "." + dateNew.getDate() + " " + dateNew.getHours() + ":" + dateNew.getMinutes();
-  mailgun.messages().send(emaildata, function (error, body) {
-	  console.log(body);
+
+  https.get(url, function(response) {
+	console.log("Loaded " + url);
+	parseResponse(response, function(result) {
+	    var dateNew = new Date();
+	    emaildata.subject = 'Hello ' + dateNew.getFullYear() + "." + dateNew.getMonth() + "." + dateNew.getDate() + " " + dateNew.getHours() + ":" + dateNew.getMinutes();
+		emaildata.text = result;
+		mailgun.messages().send(emaildata, function (error, body) {
+			console.log(body);
+		});
+	});
+
   });
+
 });
 
 
@@ -33,7 +39,7 @@ var siteNumber;
 var tags = [];
 var tagsCount = {};
 var tagsWithCount = [];
-var parseResponse = function(response) {
+var parseResponse = function(response, callback) {
   var data = "";
   response.on('data', function(chunk) {
     data += chunk;
@@ -88,7 +94,7 @@ var parseResponse = function(response) {
 		var result = JSON.stringify(tagsWithCount);
 	    //console.log(tagsWithCount[0].count);
 		console.log(result); 
-		
+		callback(result);
 		/*var obj = JSON.parse(result);
 		var objdates = [];
 		var objcounter = [];
@@ -114,11 +120,11 @@ app.get('/opus', cors(), function (req, res, next) {
 
 app.get('/', cors(), function (req, res, next) {
   console.log("Request arrived OK");
-  var dateNew = new Date();
-  emaildata.subject = 'Hello ' + dateNew.getFullYear() + "." + dateNew.getMonth() + "." + dateNew.getDate() + " " + dateNew.getHours() + ":" + dateNew.getMinutes();
-  mailgun.messages().send(emaildata, function (error, body) {
-	  console.log(body);
-  });  
+  //var dateNew = new Date();
+  //emaildata.subject = 'Hello ' + dateNew.getFullYear() + "." + dateNew.getMonth() + "." + dateNew.getDate() + " " + dateNew.getHours() + ":" + dateNew.getMinutes();
+  //mailgun.messages().send(emaildata, function (error, body) {
+  //	  console.log(body);
+  //});  
   res.json('Request arrived OK');
 });
 
