@@ -114,6 +114,11 @@ app.get('/opus', cors(), function (req, res, next) {
 
 app.get('/', cors(), function (req, res, next) {
   console.log("Request arrived OK");
+  var dateNew = new Date();
+  emaildata.subject = 'Hello ' + dateNew.getFullYear() + "." + dateNew.getMonth() + "." + dateNew.getDate() + " " + dateNew.getHours() + ":" + dateNew.getMinutes();
+  mailgun.messages().send(emaildata, function (error, body) {
+	  console.log(body);
+  });  
   res.json('Request arrived OK');
 });
 
