@@ -19,7 +19,8 @@
     "htmlparser2": "3.9.2",
     "mailgun-js": "0.13.1",
     "node-schedule": "1.2.5",
-    "nodemon": "1.12.1"
+    "nodemon": "1.12.1",
+    "sentiment": "4.1.0"
   },
   "keywords": [
     "example",
