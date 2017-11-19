@@ -172,13 +172,13 @@ var sendEmail = function(result) {
 	});
 };
 
-var montlyJob = scheduler.scheduleJob('10 01 * * *', function() { //*/1 * * * *
+/*var montlyJob = scheduler.scheduleJob('10 01 * * *', function() {
   console.log('I am going to send an email on ' + dateFormated);
   https.get(url, function(response) {
 		console.log("Loaded " + url);
 		parseResponse(response);
   });
-});
+});*/
 
 var parseResponse = function(response, isInit, callback) {
   var data = "";
@@ -278,9 +278,9 @@ app.get('/init', cors(), function (req, res, next) {
 						  if (err) return handleError(err);
 						  // saved!
 						});
-						res.json(JSON.stringify(tagsWithCount));
 					});
 				});
+				res.json(JSON.stringify("Started forum initalization"));
 			}
 		});
 });
