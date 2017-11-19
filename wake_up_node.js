@@ -1,15 +1,14 @@
-var http = require('http'); //importing http
+var http = require('http');
 
 var options = {
-    host: 'portfolio-seeker.herokuapp.com',
-    path: '/'
+    host: 'portfolio-seeker-api.herokuapp.com',
+    path: '/batch'
 };
-console.log("Start wake up dyno");
+console.log("Start wake up dyno and process new forum entries");
 http.get(options, function(res) {
     res.on('data', function(chunk) {
         try {
-            // optional logging... disable after it's working
-            console.log("WAKUP DYNO: HEROKU RESPONSE: " + chunk);
+            console.log("Wake up endpoint returned: " + chunk);
         } catch (err) {
             console.log(err.message);
         }
