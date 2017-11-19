@@ -6,6 +6,12 @@ var express = require('express');
 var cors = require('cors');
 var app = express();
 var scheduler = require('node-schedule');
+const mongoose = require('mongoose');
+var Forum = require('./models/forum');
+
+//DB Setup
+const connectURL = process.env.MONGODB_URI || 'mongodb://localhost:auth/auth';
+mongoose.connect(connectURL);
 
 var api_key = process.env.MAILGUN_API_KEY;
 var domain = 'sandbox21dd732e255747b48e88245c204feda6.mailgun.org';
@@ -15,7 +21,6 @@ var siteNumber;
 var tags = [];
 var tagsCount = {};
 var tagsWithCount = [];
-var tagsWithCountAndToday = [];
 var date = new Date();
 var dateFormated = date.getFullYear() + "." + date.getMonth() + "." + date.getDate() + " " + date.getHours() + ":" + date.getMinutes();
 var url = 'https://forum.portfolio.hu/topics/opus-global-nyrt/25754?limit=100';
@@ -217,21 +222,51 @@ var parseResponse = function(response, isInit, callback) {
 
 app.get('/init', cors(), function (req, res, next) {
   console.log("Request arrived");
-	tags = [];
-	tagsCount = {};
-	tagsWithCount = [];
-	siteNumber = undefined;
-	https.get(url, function(response) {
-		console.log("Test page loaded " + url);
-		parseResponse(response, true, function() {
-			res.json(JSON.stringify(tagsWithCount));
+	Forum.find({ name: url }).exec(function(err, dbForum) {
+			if (err) {
+				res.json(JSON.stringify("Error by read from DB"));
+			}
+			//console.log(dbForum);
+			if (dbForum && dbForum[0]) {
+				console.log("Already initalized " + url);
+				res.json(dbForum[0].data);
+			} else {
+				tags = [];
+				tagsCount = {};
+				tagsWithCount = [];
+				siteNumber = undefined;
+				https.get(url, function(response) {
+					console.log("Test page loaded " + url);
+					parseResponse(response, true, function() {
+						var forum = new Forum();
+						forum.name = url;
+						forum.data = JSON.stringify(tagsWithCount);
+						forum.date = new Date();
+						forum.updated = false;
+						forum.save(function (err) {
+						  if (err) return handleError(err);
+						  // saved!
+						});
+						res.json(JSON.stringify(tagsWithCount));
+					});
+				});
+			}
 		});
-	});
 });
 
 app.get('/data', cors(), function (req, res, next) {
   console.log("Start sending data back");
-  res.json(JSON.stringify(tagsWithCountAndToday));
+	Forum.findOne({ name: url }).exec(function(err, dbForum) {
+			if (err) {
+				res.json(JSON.stringify("Error by read data from DB"));
+			}
+			//console.log(dbForum);
+			if (!dbForum) {
+				res.json(JSON.stringify(new Array()));
+			} else {
+				res.json(dbForum.data);
+			}
+		});
 });
 
 app.get('/', cors(), function (req, res, next) {
@@ -241,22 +276,60 @@ app.get('/', cors(), function (req, res, next) {
 
 app.get('/email', cors(), function (req, res, next) {
   console.log("Start sending email");
-	sendEmail(JSON.stringify(tagsWithCountAndToday));
-  res.json('Email with processed data sent');
+	Forum.findOne({ name: url }).exec(function(err, dbForum) {
+			if (err) {
+				res.json(JSON.stringify("Error by read email from DB"));
+			}
+			//console.log(dbForum);
+			if (!dbForum) {
+				sendEmail(JSON.stringify("Forum not initalized yet"));
+			  res.json('Email with null data sent');
+			} else {
+				sendEmail(dbForum.data);
+			  res.json('Email with processed data sent');
+			}
+		});
 });
 
 app.get('/batch', cors(), function (req, res, next) {
   console.log("Start processing new data");
 	tags = [];
 	tagsCount = {};
-	tagsWithCountAndToday = [];
-	https.get(url, function(response) {
-		console.log("Test page for batch loaded " + url);
-		parseResponse(response, false, function() {
-			tagsWithCountAndToday.push({date:tags[0], count:tagsCount[tags[0]]});
-			tagsWithCountAndToday.push(tagsWithCount);
-			res.json(JSON.stringify(tagsWithCountAndToday));
-		});
+	var tagsWithCountAndToday = [];
+	Forum.findOne({ name: url }).exec(function(err, dbForum) {
+			if (err) {
+				res.json(JSON.stringify("Error by read batch from DB"));
+			}
+			//console.log(dbForum);
+			if (!dbForum) {
+				console.log("Not initalized yet " + url);
+				res.json(JSON.stringify("Please initalize forum first"));
+			} else if (dbForum.updated) {
+				console.log("Already updated " + url);
+				res.json(dbForum.data);
+			} else {
+				https.get(url, function(response) {
+					console.log("Test page for batch loaded " + url);
+					parseResponse(response, false, function() {
+						//tagsWithCountAndToday.push({date:tags[0], count:tagsCount[tags[0]]});
+						var tagsWithCountAndToday = JSON.parse(dbForum.data);
+						tagsWithCountAndToday.unshift({date:tags[0], count:tagsCount[tags[0]]});
+						//tagsWithCountAndToday.push(JSON.parse(dbForum[0].data));
+						//tagsWithCountAndToday.push(JSON.parse(dbForum[0].data));
+						//res.json(JSON.stringify(tagsWithCountAndToday));
+						dbForum.data = JSON.stringify(tagsWithCountAndToday);
+						dbForum.date = new Date();
+						dbForum.updated = true;
+						//dbForum.save();
+						dbForum.save(function (err) {
+						  if (err) return handleError(err);
+						  // saved!
+							console.log("Data updated " + url);
+							res.json(JSON.stringify(tagsWithCountAndToday));
+						});
+					});
+				});
+			}
 	});
 });
 
