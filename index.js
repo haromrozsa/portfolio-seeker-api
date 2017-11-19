@@ -222,7 +222,7 @@ var parseResponse = function(response, isInit, callback) {
 		});
 //console.log(siteNumber > 555);
 //console.log((isInit || isYesterday));
-		if (siteNumber > 555 && (isInit || isYesterday)) {
+		if (siteNumber > 0 && (isInit || isYesterday)) {
 			var newUrl = url + "&oldal=" + siteNumber;
 			console.log(newUrl);
 			https.get(newUrl, function(response) {
