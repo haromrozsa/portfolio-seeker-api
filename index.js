@@ -15,6 +15,7 @@ var siteNumber;
 var tags = [];
 var tagsCount = {};
 var tagsWithCount = [];
+var tagsWithCountAndToday = [];
 var date = new Date();
 var dateFormated = date.getFullYear() + "." + date.getMonth() + "." + date.getDate() + " " + date.getHours() + ":" + date.getMinutes();
 var url = 'https://forum.portfolio.hu/topics/opus-global-nyrt/25754?limit=100';
@@ -50,8 +51,9 @@ var parseToDate = function(dateString) {
 		} else if (dateString.indexOf("vas")!= -1) { //vasárnap
 		 	currentDayInt = 0;
 		} else if (dateString.indexOf("ma")!= -1) { //ma
- 		 	return d.getFullYear() + "." + d.getMonth() + "." + d.getDate()
- 		 } else  {
+ 		 	//return d.getFullYear() + "." + d.getMonth() + "." + d.getDate();
+				return "ma";
+		 } else  {
 		 		return dateString;
 		 }
 
@@ -145,8 +147,9 @@ var montlyJob = scheduler.scheduleJob('10 01 * * *', function() { //*/1 * * * *
   });
 });
 
-var parseResponse = function(response, callback) {
+var parseResponse = function(response, isInit, callback) {
   var data = "";
+	var isToday;
   response.on('data', function(chunk) {
     data += chunk;
   });
@@ -167,26 +170,40 @@ var parseResponse = function(response, callback) {
 			} else {
 				dateTextSplitted = parseMonthToDate(dateText.split("|")[0].trim());
 			}
+			isToday = dateTextSplitted.indexOf("ma") != -1;
+			//if (isToday && exclusiveToday) {
+			//	console.log("ma nem hozzaadva");
+			//}	else
 			if(tags.indexOf(dateTextSplitted) === -1) {
-				tags.push(dateTextSplitted);
-				tagsCount[dateTextSplitted] = 1;
+				if (isToday && isInit) {
+					//refactor: 1 else if
+				} else {
+					tags.push(dateTextSplitted);
+					tagsCount[dateTextSplitted] = 1;
+				}
 			} else {
 				tagsCount[dateTextSplitted]++;
 			}
 		});
 
-		if (siteNumber > 557) {
+		if (siteNumber > 555 && (isInit || isToday)) {
 			var newUrl = url + "&oldal=" + siteNumber;
 			console.log(newUrl);
 			https.get(newUrl, function(response) {
-				parseResponse(response, callback);
+				parseResponse(response, isInit, callback);
 			})
 		} else {
-			for(var i = 0; i < tags.length;i++) {
-				tagsWithCount.push({date:tags[i], count:tagsCount[tags[i]]});
+			if (!isInit) {
+				//tagsWithCount.push({date:tags[0], count:tagsCount[tags[0]]});
+
+			} else {
+				for(var i = 0; i < tags.length;i++) {
+					tagsWithCount.push({date:tags[i], count:tagsCount[tags[i]]});
+				}
+				console.log(JSON.stringify(tagsWithCount));
 			}
-			var result = JSON.stringify(tagsWithCount);
-			console.log(result);
+			//var result = JSON.stringify(tagsWithCount);
+			//console.log(result);
 			callback();
 			//sendEmail(result);
 		}
@@ -200,9 +217,13 @@ var parseResponse = function(response, callback) {
 
 app.get('/init', cors(), function (req, res, next) {
   console.log("Request arrived");
+	tags = [];
+	tagsCount = {};
+	tagsWithCount = [];
+	siteNumber = undefined;
 	https.get(url, function(response) {
 		console.log("Test page loaded " + url);
-		parseResponse(response, function() {
+		parseResponse(response, true, function() {
 			res.json(JSON.stringify(tagsWithCount));
 		});
 	});
@@ -210,7 +231,7 @@ app.get('/init', cors(), function (req, res, next) {
 
 app.get('/data', cors(), function (req, res, next) {
   console.log("Start sending data back");
-  res.json(JSON.stringify(tagsWithCount));
+  res.json(JSON.stringify(tagsWithCountAndToday));
 });
 
 app.get('/', cors(), function (req, res, next) {
@@ -220,8 +241,23 @@ app.get('/', cors(), function (req, res, next) {
 
 app.get('/email', cors(), function (req, res, next) {
   console.log("Start sending email");
-	sendEmail(JSON.stringify(tagsWithCount));
+	sendEmail(JSON.stringify(tagsWithCountAndToday));
   res.json('Email with processed data sent');
+});
+
+app.get('/batch', cors(), function (req, res, next) {
+  console.log("Start processing new data");
+	tags = [];
+	tagsCount = {};
+	tagsWithCountAndToday = [];
+	https.get(url, function(response) {
+		console.log("Test page for batch loaded " + url);
+		parseResponse(response, false, function() {
+			tagsWithCountAndToday.push({date:tags[0], count:tagsCount[tags[0]]});
+			tagsWithCountAndToday.push(tagsWithCount);
+			res.json(JSON.stringify(tagsWithCountAndToday));
+		});
+	});
 });
 
 const port = process.env.PORT || 8081;
