@@ -31,12 +31,40 @@ var emaildata = {
   text: 'Testing some Mailgun awesomness!'
 };
 
-var parseToDate = function(dateString) {
+var getYesterdayString = function(dateString) {
+	//console.log("yesterday");
+	switch (new Date().getDay()) {
+	 case 0:
+			 return "szombat";
+	 case 1:
+			 return "vas";
+	 case 2:
+			 return "tf";
+	 case 3:
+			 return "kedd";
+	 case 4:
+			 return "szerda";
+	 case 5:
+			 return "cs";
+	 case 6:
+			 return "ntek";
+	 }
+};
+
+var parseToDate = function(dateString, isInit) {
 	//var dateString = dateString.replace("é", "e");
 	//console.log(dateString);
 		//if (dateString == "pentek") {
 		//	console.log("nana");
 		//	}
+		 //var yesterday = getYesterdayString();
+		 //console.log(yesterday);
+
+		 if (!isInit && dateString.indexOf(getYesterdayString())!= -1) {
+			 //tegnapi nap: feldolgozas
+			  //console.log("mivan");
+		 		return "tegnap";
+		 }
 		 var d = new Date(); // today!
 
 		 var currentDayInt;
@@ -56,7 +84,7 @@ var parseToDate = function(dateString) {
 		} else if (dateString.indexOf("vas")!= -1) { //vasárnap
 		 	currentDayInt = 0;
 		} else if (dateString.indexOf("ma")!= -1) { //ma
- 		 	//return d.getFullYear() + "." + d.getMonth() + "." + d.getDate();
+ 		 	 //return d.getFullYear() + "." + d.getMonth() + "." + d.getDate();
 				return "ma";
 		 } else  {
 		 		return dateString;
@@ -171,16 +199,18 @@ var parseResponse = function(response, isInit, callback) {
 			var dateText = $(this).text();
 			var dateTextSplitted;
 			if (dateText.indexOf(",") != -1) {
-				dateTextSplitted = (parseToDate(dateText.split(",")[0].trim()));
+				dateTextSplitted = parseToDate(dateText.split(",")[0].trim(), isInit);
 			} else {
 				dateTextSplitted = parseMonthToDate(dateText.split("|")[0].trim());
 			}
 			isToday = dateTextSplitted.indexOf("ma") != -1;
+			isYesterday = dateTextSplitted.indexOf("tegnap") != -1;
 			//if (isToday && exclusiveToday) {
-			//	console.log("ma nem hozzaadva");
+			//console.log(dateTextSplitted + " " + isYesterday);
 			//}	else
 			if(tags.indexOf(dateTextSplitted) === -1) {
-				if (isToday && isInit) {
+				//if (isToday && isInit) {
+				if (isToday) {
 					//refactor: 1 else if
 				} else {
 					tags.push(dateTextSplitted);
@@ -190,8 +220,9 @@ var parseResponse = function(response, isInit, callback) {
 				tagsCount[dateTextSplitted]++;
 			}
 		});
-
-		if (siteNumber > 555 && (isInit || isToday)) {
+//console.log(siteNumber > 555);
+//console.log((isInit || isYesterday));
+		if (siteNumber > 555 && (isInit || isYesterday)) {
 			var newUrl = url + "&oldal=" + siteNumber;
 			console.log(newUrl);
 			https.get(newUrl, function(response) {
@@ -295,6 +326,7 @@ app.get('/batch', cors(), function (req, res, next) {
   console.log("Start processing new data");
 	tags = [];
 	tagsCount = {};
+	siteNumber = undefined;
 	var tagsWithCountAndToday = [];
 	Forum.findOne({ name: url }).exec(function(err, dbForum) {
 			if (err) {
@@ -313,8 +345,8 @@ app.get('/batch', cors(), function (req, res, next) {
 					parseResponse(response, false, function() {
 						//tagsWithCountAndToday.push({date:tags[0], count:tagsCount[tags[0]]});
 						var tagsWithCountAndToday = JSON.parse(dbForum.data);
-						tagsWithCountAndToday.unshift({date:tags[0], count:tagsCount[tags[0]]});
-						//tagsWithCountAndToday.push(JSON.parse(dbForum[0].data));
+						//tagsWithCountAndToday.unshift({date:tags[0], count:tagsCount[tags[0]]});
+						tagsWithCountAndToday.unshift({date:date.getFullYear() + "." + date.getMonth() + "." + (date.getDate()-1), count:tagsCount[tags[0]]});
 						//tagsWithCountAndToday.push(JSON.parse(dbForum[0].data));
 						//res.json(JSON.stringify(tagsWithCountAndToday));
 						dbForum.data = JSON.stringify(tagsWithCountAndToday);
@@ -325,6 +357,7 @@ app.get('/batch', cors(), function (req, res, next) {
 						  if (err) return handleError(err);
 						  // saved!
 							console.log("Data updated " + url);
+							sendEmail(JSON.stringify(tagsWithCountAndToday));
 							res.json(JSON.stringify(tagsWithCountAndToday));
 						});
 					});
