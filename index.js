@@ -7,7 +7,7 @@ var cors = require('cors');
 var app = express();
 var scheduler = require('node-schedule');
 
-var api_key = "gfdgf";//process.env.MAILGUN_API_KEY;
+var api_key = process.env.MAILGUN_API_KEY;
 var domain = 'sandbox21dd732e255747b48e88245c204feda6.mailgun.org';
 var mailgun = require('mailgun-js')({apiKey: api_key, domain: domain});
 
@@ -129,143 +129,102 @@ var parseMonthToDate = function(dateString) {
 };
 
 var sendEmail = function(result) {
-	    var dateNew = new Date();
-	    emaildata.subject = 'Hello ' + dateNew.getFullYear() + "." + dateNew.getMonth() + "." + dateNew.getDate() + " " + dateNew.getHours() + ":" + dateNew.getMinutes();
-		emaildata.text = result;
-		mailgun.messages().send(emaildata, function (error, body) {
-			console.log(body);
-		});
+	var dateNew = new Date();
+	emaildata.subject = 'Hello ' + dateNew.getFullYear() + "." + dateNew.getMonth() + "." + dateNew.getDate() + " " + dateNew.getHours() + ":" + dateNew.getMinutes();
+	emaildata.text = result;
+	mailgun.messages().send(emaildata, function (error, body) {
+		console.log(body);
+	});
 };
 
 var montlyJob = scheduler.scheduleJob('10 01 * * *', function() { //*/1 * * * *
- console.log('I am going to send an email on ' + dateFormated);
-
+  console.log('I am going to send an email on ' + dateFormated);
   https.get(url, function(response) {
-	console.log("Loaded " + url);
-	parseResponse(response);
-
+		console.log("Loaded " + url);
+		parseResponse(response);
   });
-
 });
 
-var parseResponse = function(response) {
+var parseResponse = function(response, callback) {
   var data = "";
   response.on('data', function(chunk) {
     data += chunk;
   });
   response.on('end', function(chunk) {
-	//console.log(data);
-	$ = cheerio.load(data);
-	if (!siteNumber) {
-		var siteHref = $('ul li[class=""] a').first().attr('href');
-		//console.log(siteHref); //eq(3).children().text());
+		$ = cheerio.load(data);
+		if (!siteNumber) {
+			var siteHref = $('ul li[class=""] a').first().attr('href');
+			siteNumber = siteHref.split('?').pop().split('&').shift().split('=').pop();
+		} else  {
+			siteNumber--;
+		}
 
-		siteNumber = siteHref.split('?').pop().split('&').shift().split('=').pop();
-		//console.log(siteNumber);
-	} else  {
-		siteNumber--;
-	}
+		$('div .upRow').children('div .date').each(function(i, elem) {
+			var dateText = $(this).text();
+			var dateTextSplitted;
+			if (dateText.indexOf(",") != -1) {
+				dateTextSplitted = (parseToDate(dateText.split(",")[0].trim()));
+			} else {
+				dateTextSplitted = parseMonthToDate(dateText.split("|")[0].trim());
+			}
+			if(tags.indexOf(dateTextSplitted) === -1) {
+				tags.push(dateTextSplitted);
+				tagsCount[dateTextSplitted] = 1;
+			} else {
+				tagsCount[dateTextSplitted]++;
+			}
+		});
 
-	//$('div .date').each(function(i, elem) {
-	$('div .upRow').children('div .date').each(function(i, elem) {
-		var dateText = $(this).text();
-		var dateTextSplitted;// = dateText.split(",");
-		if (dateText.indexOf(",") != -1) {
-			//dateTextSplitted = dateText.split(",")[0].trim();
-			//parseToDate(dateTextSplitted[0].trim());
-			//console.log(dateText.split(",")[0].trim());
-			//dateTextSplitted = parseToDate("péntek");
-			dateTextSplitted = (parseToDate(dateText.split(",")[0].trim()));
+		if (siteNumber > 557) {
+			var newUrl = url + "&oldal=" + siteNumber;
+			console.log(newUrl);
+			https.get(newUrl, function(response) {
+				parseResponse(response, callback);
+			})
 		} else {
-			dateTextSplitted = parseMonthToDate(dateText.split("|")[0].trim());
+			for(var i = 0; i < tags.length;i++) {
+				tagsWithCount.push({date:tags[i], count:tagsCount[tags[i]]});
+			}
+			var result = JSON.stringify(tagsWithCount);
+			console.log(result);
+			callback();
+			//sendEmail(result);
 		}
-		//console.log(dateTextSplitted[0]);
-		if(tags.indexOf(dateTextSplitted) === -1) {
-			tags.push(dateTextSplitted);
-			tagsCount[dateTextSplitted] = 1;
-		} else {
-			tagsCount[dateTextSplitted]++;
-		}
-	  //fruits[i] = $(this).text();
-	});
-
-	if (siteNumber > 520) {
-		//console.log(siteNumber);
-		var newUrl = url + "&oldal=" + siteNumber;
-		console.log(newUrl);
-		https.get(newUrl, function(response) {
-			parseResponse(response);
-		})
-	} else {
-		//var myJsonString = JSON.stringify(yourArray);
-		//console.log($('div .date').length);
-		for(var i = 0; i < tags.length;i++) {
-			tagsWithCount.push({date:tags[i], count:tagsCount[tags[i]]});
-		}
-		//var result = tagsWithCount;
-		var result = JSON.stringify(tagsWithCount);
-	    //console.log(tagsWithCount[0].count);
-		console.log(result);
-		sendEmail(result);
-		/*var obj = JSON.parse(result);
-		var objdates = [];
-		var objcounter = [];
-		for(var i = 0; i < obj.length;i++) {
-			objcounter.push(obj[i].count);
-			objdates.push(obj[i].date);
-		}
-		console.log(objdates);
-		console.log(objcounter);*/
-	}
-
-		//console.log($('div .date').length);
-		//console.log(tagsCount);
   });
 }
 
-https.get(url, function(response) {
-	console.log("Test loaded " + url);
-	parseResponse(response);
+//https.get(url, function(response) {
+	//console.log("Test loaded " + url);
+	//parseResponse(response);
+//});
+
+app.get('/init', cors(), function (req, res, next) {
+  console.log("Request arrived");
+	https.get(url, function(response) {
+		console.log("Test page loaded " + url);
+		parseResponse(response, function() {
+			res.json(JSON.stringify(tagsWithCount));
+		});
+	});
 });
 
-app.get('/opus', cors(), function (req, res, next) {
-  console.log("Request arrived");
+app.get('/data', cors(), function (req, res, next) {
+  console.log("Start sending data back");
   res.json(JSON.stringify(tagsWithCount));
-  //res.json({msg: 'This is CORS-enabled for a Single Route'})
 });
 
 app.get('/', cors(), function (req, res, next) {
-  console.log("Request arrived OK");
-  //var dateNew = new Date();
-  //emaildata.subject = 'Hello ' + dateNew.getFullYear() + "." + dateNew.getMonth() + "." + dateNew.getDate() + " " + dateNew.getHours() + ":" + dateNew.getMinutes();
-  //mailgun.messages().send(emaildata, function (error, body) {
-  //	  console.log(body);
-  //});
-  res.json('Request arrived OK');
+  console.log("Wake up request arrived");
+  res.json('Wake up request arrived and returned');
 });
 
 app.get('/email', cors(), function (req, res, next) {
   console.log("Start sending email");
-	mailgun.messages().send(emaildata, function (error, body) {
-	  console.log(body);
-	});
-  res.json('Email sent');
+	sendEmail(JSON.stringify(tagsWithCount));
+  res.json('Email with processed data sent');
 });
 
 const port = process.env.PORT || 8081;
 app.listen(port, function () {
   console.log('CORS-enabled web server listening, date: ' + dateFormated);
 });
-/*http.createServer(function (request, response) {
-   // Send the HTTP header
-   // HTTP Status: 200 : OK
-   // Content Type: text/plain
-   console.log("Request arrived");
-   response.writeHead(200, {'Content-Type': 'application/json'});
-
-   // Send the response body as "Hello World"
-   response.end(JSON.stringify(tagsWithCount));
-}).listen(8081);*/
-
-// Console will print the message
-//console.log('Server running at http://127.0.0.1:8081/');
