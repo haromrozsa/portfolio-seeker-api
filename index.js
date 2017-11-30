@@ -3,6 +3,7 @@ var htmlparser = require('htmlparser2');
 var cheerio = require('cheerio');
 //var http = require('http');
 var express = require('express');
+var async = require('async');
 var cors = require('cors');
 var app = express();
 var scheduler = require('node-schedule');
@@ -23,7 +24,14 @@ var tagsCount = {};
 var tagsWithCount = [];
 var date = new Date();
 var dateFormated = date.getFullYear() + "." + date.getMonth() + "." + date.getDate() + " " + date.getHours() + ":" + date.getMinutes();
-var url = 'https://forum.portfolio.hu/topics/opus-global-nyrt/25754?limit=100';
+//var url = 'https://forum.portfolio.hu/topics/opus-global-nyrt/25754?limit=100';
+//var url = 'https://forum.portfolio.hu/topics/opus-global-nyrt/25754?oldal=569&limit=100';
+
+var urlMap = {
+    OPUS: 'https://forum.portfolio.hu/topics/opus-global-nyrt/25754?limit=100',
+    APPENINN: 'https://forum.portfolio.hu/topics/appeninn/13459?limit=100'
+};
+
 var emaildata = {
   from: 'Excited User <me@samples.mailgun.org>',
   to: 'haromrozsa@gmail.com',
@@ -172,6 +180,14 @@ var sendEmail = function(result) {
 	});
 };
 
+var setUrl = function(paramUrl) {
+  if (!paramUrl || !urlMap[paramUrl]) {
+    return true;
+  }
+
+  url = urlMap[paramUrl];
+  return false;
+};
 /*var montlyJob = scheduler.scheduleJob('10 01 * * *', function() {
   console.log('I am going to send an email on ' + dateFormated);
   https.get(url, function(response) {
@@ -195,8 +211,10 @@ var parseResponse = function(response, isInit, callback) {
 			siteNumber--;
 		}
 
-		$('div .upRow').children('div .date').each(function(i, elem) {
-			var dateText = $(this).text();
+		//$('div .upRow').children('div .date').each(function(i, elem) {
+    $('div .upRow').each(function(i, elem) {
+			var dateText = $(this).children('div .date').text();
+    //  var sequence = $(this).children('div .postNumber').text();
 			var dateTextSplitted;
 			if (dateText.indexOf(",") != -1) {
 				dateTextSplitted = parseToDate(dateText.split(",")[0].trim(), isInit);
@@ -208,6 +226,9 @@ var parseResponse = function(response, isInit, callback) {
 			//if (isToday && exclusiveToday) {
 			//console.log(dateTextSplitted + " " + isYesterday);
 			//}	else
+      /*if (dateTextSplitted === "2017.11.19.") {
+        console.log(sequence);
+      }*/
 			if(tags.indexOf(dateTextSplitted) === -1) {
 				//if (isToday && isInit) {
 				if (isToday) {
@@ -222,7 +243,7 @@ var parseResponse = function(response, isInit, callback) {
 		});
 //console.log(siteNumber > 555);
 //console.log((isInit || isYesterday));
-		if (siteNumber > 0 && (isInit || isYesterday)) {
+		if (siteNumber > 0 && (isInit || isYesterday)) { //590
 			var newUrl = url + "&oldal=" + siteNumber;
 			console.log(newUrl);
 			https.get(newUrl, function(response) {
@@ -251,53 +272,64 @@ var parseResponse = function(response, isInit, callback) {
 	//parseResponse(response);
 //});
 
-app.get('/init', cors(), function (req, res, next) {
+app.get('/init/:forumname', cors(), function (req, res, next) {
   console.log("Request arrived");
-	Forum.find({ name: url }).exec(function(err, dbForum) {
-			if (err) {
-				res.json(JSON.stringify("Error by read from DB"));
-			}
-			//console.log(dbForum);
-			if (dbForum && dbForum[0]) {
-				console.log("Already initalized " + url);
-				res.json(dbForum[0].data);
-			} else {
-				tags = [];
-				tagsCount = {};
-				tagsWithCount = [];
-				siteNumber = undefined;
-				https.get(url, function(response) {
-					console.log("Test page loaded " + url);
-					parseResponse(response, true, function() {
-						var forum = new Forum();
-						forum.name = url;
-						forum.data = JSON.stringify(tagsWithCount);
-						forum.date = new Date();
-						forum.updated = false;
-						forum.save(function (err) {
-						  if (err) return handleError(err);
-						  // saved!
-						});
-					});
-				});
-				res.json(JSON.stringify("Started forum initalization"));
-			}
-		});
+  //console.log(req.params.forumname);
+  //var url = urlMap[req.params.forumname];
+  if (setUrl(req.params.forumname)) {
+    res.json("Invalid forum name");
+  } else {
+    console.log(url);
+  	Forum.find({ name: url }).exec(function(err, dbForum) {
+  			if (err) {
+  				res.json(JSON.stringify("Error by read from DB"));
+  			}
+  			//console.log(dbForum);
+  			if (dbForum && dbForum[0]) {
+  				console.log("Already initalized " + url);
+  				res.json(dbForum[0].data);
+  			} else {
+  				tags = [];
+  				tagsCount = {};
+  				tagsWithCount = [];
+  				siteNumber = undefined;
+  				https.get(url, function(response) {
+  					console.log("Test page loaded " + url);
+  					parseResponse(response, true, function() {
+  						var forum = new Forum();
+  						forum.name = url;
+  						forum.data = JSON.stringify(tagsWithCount);
+  						forum.date = new Date();
+  						forum.updated = false;
+  						forum.save(function (err) {
+  						  if (err) return handleError(err);
+  						  // saved!
+  						});
+  					});
+  				});
+  				res.json(JSON.stringify("Started forum initalization"));
+  			}
+  		});
+    }
 });
 
-app.get('/data', cors(), function (req, res, next) {
+app.get('/data/:forumname', cors(), function (req, res, next) {
   console.log("Start sending data back");
-	Forum.findOne({ name: url }).exec(function(err, dbForum) {
-			if (err) {
-				res.json(JSON.stringify("Error by read data from DB"));
-			}
-			//console.log(dbForum);
-			if (!dbForum) {
-				res.json(JSON.stringify(new Array()));
-			} else {
-				res.json(dbForum.data);
-			}
-		});
+  if (setUrl(req.params.forumname)) {
+    res.json("Invalid forum name");
+  } else {
+  	Forum.findOne({ name: url }).exec(function(err, dbForum) {
+  			if (err) {
+  				res.json(JSON.stringify("Error by read data from DB"));
+  			}
+  			//console.log(dbForum);
+  			if (!dbForum) {
+  				res.json(JSON.stringify(new Array()));
+  			} else {
+  				res.json(dbForum.data);
+  			}
+  		});
+  }
 });
 
 app.get('/', cors(), function (req, res, next) {
@@ -305,21 +337,25 @@ app.get('/', cors(), function (req, res, next) {
   res.json('Wake up request arrived and returned');
 });
 
-app.get('/email', cors(), function (req, res, next) {
+app.get('/email/:forumname', cors(), function (req, res, next) {
   console.log("Start sending email");
-	Forum.findOne({ name: url }).exec(function(err, dbForum) {
-			if (err) {
-				res.json(JSON.stringify("Error by read email from DB"));
-			}
-			//console.log(dbForum);
-			if (!dbForum) {
-				sendEmail(JSON.stringify("Forum not initalized yet"));
-			  res.json('Email with null data sent');
-			} else {
-				sendEmail(dbForum.data);
-			  res.json('Email with processed data sent');
-			}
-		});
+  if (setUrl(req.params.forumname)) {
+    res.json("Invalid forum name");
+  } else {
+  	Forum.findOne({ name: url }).exec(function(err, dbForum) {
+  			if (err) {
+  				res.json(JSON.stringify("Error by read email from DB"));
+  			}
+  			//console.log(dbForum);
+  			if (!dbForum) {
+  				sendEmail(JSON.stringify("Forum not initalized yet"));
+  			  res.json('Email with null data sent');
+  			} else {
+  				sendEmail(dbForum.data);
+  			  res.json('Email with processed data sent');
+  			}
+  		});
+  }
 });
 
 app.get('/batch', cors(), function (req, res, next) {
@@ -328,42 +364,48 @@ app.get('/batch', cors(), function (req, res, next) {
 	tagsCount = {};
 	siteNumber = undefined;
 	var tagsWithCountAndToday = [];
-	Forum.findOne({ name: url }).exec(function(err, dbForum) {
-			if (err) {
-				res.json(JSON.stringify("Error by read batch from DB"));
-			}
-			//console.log(dbForum);
-			if (!dbForum) {
-				console.log("Not initalized yet " + url);
-				res.json(JSON.stringify("Please initalize forum first"));
-			} else if (dbForum.updated) {
-				console.log("Already updated " + url);
-				res.json(dbForum.data);
-			} else {
-				https.get(url, function(response) {
-					console.log("Test page for batch loaded " + url);
-					parseResponse(response, false, function() {
-						//tagsWithCountAndToday.push({date:tags[0], count:tagsCount[tags[0]]});
-						var tagsWithCountAndToday = JSON.parse(dbForum.data);
-						//tagsWithCountAndToday.unshift({date:tags[0], count:tagsCount[tags[0]]});
-						tagsWithCountAndToday.unshift({date:date.getFullYear() + "." + date.getMonth() + "." + (date.getDate()-1), count:tagsCount[tags[0]]});
-						//tagsWithCountAndToday.push(JSON.parse(dbForum[0].data));
-						//res.json(JSON.stringify(tagsWithCountAndToday));
-						dbForum.data = JSON.stringify(tagsWithCountAndToday);
-						dbForum.date = new Date();
-						dbForum.updated = true;
-						//dbForum.save();
-						dbForum.save(function (err) {
-						  if (err) return handleError(err);
-						  // saved!
-							console.log("Data updated " + url);
-							sendEmail(JSON.stringify(tagsWithCountAndToday));
-							res.json(JSON.stringify(tagsWithCountAndToday));
-						});
-					});
-				});
-			}
-	});
+  async.forEachOf(urlMap, (url, name) => {
+    console.log(url);
+    console.log(name);
+    Forum.findOne({ name: url }).exec(function(err, dbForum) {
+  			if (err) {
+  				res.json(JSON.stringify("Error by read batch from DB"));
+  			}
+  			//console.log(dbForum);
+  			if (!dbForum) {
+  				console.log("Not initalized yet " + url);
+  				res.json(JSON.stringify("Please initalize forum first"));
+  			} else if (dbForum.updated) {
+  				console.log("Already updated " + url);
+  				res.json(dbForum.data);
+  			} else {
+  				https.get(url, function(response) {
+  					console.log("Test page for batch loaded " + url);
+  					parseResponse(response, false, function() {
+  						//tagsWithCountAndToday.push({date:tags[0], count:tagsCount[tags[0]]});
+  						var tagsWithCountAndToday = JSON.parse(dbForum.data);
+  						//tagsWithCountAndToday.unshift({date:tags[0], count:tagsCount[tags[0]]});
+  						tagsWithCountAndToday.unshift({date:date.getFullYear() + "." + date.getMonth() + "." + (date.getDate()-1), count:tagsCount[tags[0]]});
+  						//tagsWithCountAndToday.push(JSON.parse(dbForum[0].data));
+  						//res.json(JSON.stringify(tagsWithCountAndToday));
+  						dbForum.data = JSON.stringify(tagsWithCountAndToday);
+  						dbForum.date = new Date();
+  						//dbForum.updated = true;
+  						//dbForum.save();
+  						dbForum.save(function (err) {
+  						  if (err) return handleError(err);
+  						  // saved!
+  							console.log("Data updated " + url);
+  							sendEmail(JSON.stringify(tagsWithCountAndToday));
+  						});
+  					});
+  				});
+  			}
+  	});
+  }, err => {
+      if (err) console.error(err.message);
+  });
+  res.json(JSON.stringify("Started forum update"));
 });
 
 const port = process.env.PORT || 8081;
