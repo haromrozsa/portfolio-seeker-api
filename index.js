@@ -24,7 +24,7 @@ var tagsCount = {};
 var tagsWithCount = [];
 var date = new Date();
 var dateFormated = date.getFullYear() + "." + date.getMonth() + "." + date.getDate() + " " + date.getHours() + ":" + date.getMinutes();
-//var url = 'https://forum.portfolio.hu/topics/opus-global-nyrt/25754?limit=100';
+var url; // = 'https://forum.portfolio.hu/topics/opus-global-nyrt/25754?limit=100';
 //var url = 'https://forum.portfolio.hu/topics/opus-global-nyrt/25754?oldal=569&limit=100';
 
 var urlMap = {
@@ -365,8 +365,8 @@ app.get('/batch', cors(), function (req, res, next) {
 	siteNumber = undefined;
 	var tagsWithCountAndToday = [];
   async.forEachOf(urlMap, (url, name) => {
-    console.log(url);
-    console.log(name);
+    //console.log(url);
+    //console.log(name);
     Forum.findOne({ name: url }).exec(function(err, dbForum) {
   			if (err) {
   				res.json(JSON.stringify("Error by read batch from DB"));
@@ -374,11 +374,12 @@ app.get('/batch', cors(), function (req, res, next) {
   			//console.log(dbForum);
   			if (!dbForum) {
   				console.log("Not initalized yet " + url);
-  				res.json(JSON.stringify("Please initalize forum first"));
+  				//res.json(JSON.stringify("Please initalize forum first"));
   			} else if (dbForum.updated) {
   				console.log("Already updated " + url);
-  				res.json(dbForum.data);
+  				//res.json(dbForum.data);
   			} else {
+          setUrl(url);
   				https.get(url, function(response) {
   					console.log("Test page for batch loaded " + url);
   					parseResponse(response, false, function() {
