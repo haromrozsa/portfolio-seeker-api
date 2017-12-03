@@ -129,7 +129,7 @@ var parseToDate = function(dateString, isInit) {
 		 var dateDay = (currentDayInt - new Date().getDay()) < 0 ? (new Date().getDay() - currentDayInt) : (new Date().getDay() - currentDayInt + 7);
 		 d.setDate(d.getDate() - dateDay);
 		 //console.log(d.getFullYear() + "." + d.getMonth() + "." + d.getDate());
-		 return d.getFullYear() + "." + d.getMonth() + "." + d.getDate();
+		 return d.getFullYear() + "." + (d.getMonth() +1 ) + "." + d.getDate();
 };
 
 var parseMonthToDate = function(dateString) {
