@@ -360,10 +360,6 @@ app.get('/email/:forumname', cors(), function (req, res, next) {
 
 app.get('/batch', cors(), function (req, res, next) {
   console.log("Start processing new data");
-	tags = [];
-	tagsCount = {};
-	siteNumber = undefined;
-	var tagsWithCountAndToday = [];
   async.forEachOf(urlMap, (url, name) => {
     //console.log(url);
     //console.log(name);
@@ -380,6 +376,10 @@ app.get('/batch', cors(), function (req, res, next) {
   				//res.json(dbForum.data);
   			} else {
           setUrl(url);
+          tags = [];
+          tagsCount = {};
+          siteNumber = undefined;
+          var tagsWithCountAndToday = [];
   				https.get(url, function(response) {
   					console.log("Test page for batch loaded " + url);
   					parseResponse(response, false, function() {
