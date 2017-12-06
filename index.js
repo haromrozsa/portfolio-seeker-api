@@ -358,7 +358,87 @@ app.get('/email/:forumname', cors(), function (req, res, next) {
   }
 });
 
+function forEachPromise(items, fn) {
+    return items.reduce(function (promise, item) {
+        return promise.then(function () {
+            return fn(item);
+        });
+    }, Promise.resolve());
+}
+
+function logItem(item) {
+    return new Promise((resolve, reject) => {
+        process.nextTick(() => {
+            console.log(item);
+            Forum.findOne({ name: url }).exec(function(err, dbForum) {
+                if (err) {
+                  res.json(JSON.stringify("Error by read batch from DB"));
+                }
+                //console.log(dbForum);
+                if (!dbForum) {
+                  console.log("Not initalized yet " + url);
+                  //res.json(JSON.stringify("Please initalize forum first"));
+                } else if (dbForum.updated) {
+                  console.log("Already updated " + url);
+                  //res.json(dbForum.data);
+                } else {
+                  setUrl(url);
+                  tags = [];
+                  tagsCount = {};
+                  siteNumber = undefined;
+                  var tagsWithCountAndToday = [];
+                  https.get(url, function(response) {
+                    console.log("Test page for batch loaded " + url);
+                    parseResponse(response, false, function() {
+                      //tagsWithCountAndToday.push({date:tags[0], count:tagsCount[tags[0]]});
+                      var tagsWithCountAndToday = JSON.parse(dbForum.data);
+                      //tagsWithCountAndToday.unshift({date:tags[0], count:tagsCount[tags[0]]});
+                      tagsWithCountAndToday.unshift({date:date.getFullYear() + "." + date.getMonth() + "." + (date.getDate()-1), count:tagsCount[tags[0]]});
+                      //tagsWithCountAndToday.push(JSON.parse(dbForum[0].data));
+                      //res.json(JSON.stringify(tagsWithCountAndToday));
+                      dbForum.data = JSON.stringify(tagsWithCountAndToday);
+                      dbForum.date = new Date();
+                      //dbForum.updated = true;
+                      //dbForum.save();
+                      dbForum.save(function (err) {
+                        if (err) return handleError(err);
+                        // saved!
+                        console.log("Data updated " + url);
+                        sendEmail(JSON.stringify(tagsWithCountAndToday));
+                          resolve();
+                      });
+                    });
+                  });
+                }
+            });
+        })
+    });
+}
+
 app.get('/batch', cors(), function (req, res, next) {
+  console.log("Start processing new data");
+
+var items = ['https://forum.portfolio.hu/topics/appeninn/13459?limit=100', 'https://forum.portfolio.hu/topics/opus-global-nyrt/25754?limit=100'];
+//var urlMap = {
+//    OPUS: 'https://forum.portfolio.hu/topics/opus-global-nyrt/25754?limit=100',
+//    APPENINN: 'https://forum.portfolio.hu/topics/appeninn/13459?limit=100'
+//};
+
+  forEachPromise(items, logItem).then(() => {
+    console.log('done');
+  });
+
+  //async.forEachOf(urlMap, (url, name) => {
+    //console.log(url);
+    //console.log(name);
+
+  //}, err => {
+  //    if (err) console.error(err.message);
+  //});
+  res.json(JSON.stringify("Started forum update"));
+});
+
+app.get('/batch2', cors(), function (req, res, next) {
   console.log("Start processing new data");
   async.forEachOf(urlMap, (url, name) => {
     //console.log(url);
