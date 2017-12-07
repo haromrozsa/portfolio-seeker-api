@@ -366,23 +366,23 @@ function forEachPromise(items, fn) {
     }, Promise.resolve());
 }
 
-function logItem(item) {
+function logItem(urlItem) {
     return new Promise((resolve, reject) => {
         process.nextTick(() => {
-            console.log(item);
-            Forum.findOne({ name: url }).exec(function(err, dbForum) {
+            console.log(urlItem);
+            Forum.findOne({ name: urlItem }).exec(function(err, dbForum) {
                 if (err) {
                   res.json(JSON.stringify("Error by read batch from DB"));
                 }
                 //console.log(dbForum);
                 if (!dbForum) {
-                  console.log("Not initalized yet " + url);
+                  console.log("Not initalized yet " + urlItem);
                   //res.json(JSON.stringify("Please initalize forum first"));
                 } else if (dbForum.updated) {
-                  console.log("Already updated " + url);
+                  console.log("Already updated " + urlItem);
                   //res.json(dbForum.data);
                 } else {
-                  setUrl(url);
+                  url = urlItem;
                   tags = [];
                   tagsCount = {};
                   siteNumber = undefined;
