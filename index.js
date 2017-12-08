@@ -124,7 +124,7 @@ var parseMonthToDate = function(dateString) {
 var sendEmail = function(result) {
 	var dateNew = new Date();
 	emaildata.subject = 'Daily portfolio data on ' + dateNew.getFullYear() + "." + (dateNew.getMonth() + 1 ) + "." + dateNew.getDate() + " " + dateNew.getHours() + ":" + dateNew.getMinutes();
-	emaildata.text = "The following urls are updated: " +result;
+	emaildata.text = result;
 	mailgun.messages().send(emaildata, function (error, body) {
 		console.log(body);
 	});
@@ -311,7 +311,7 @@ app.get('/batch', cors(), function (req, res, next) {
         });
     }, Promise.resolve()).then(() => {
         console.log(forumUrls + ' updated');
-        sendEmail(forumUrls);
+        sendEmail("The following urls are updated: " + forumUrls);
     });
   });
   res.json(JSON.stringify("Started forum update"));
