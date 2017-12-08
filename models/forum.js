@@ -3,8 +3,10 @@ const Schema = mongoose.Schema;
 
 const forumSchema = new Schema({
   name: String,
+  url: String,
   data: String,
-  date: Date,
+  createdate: Date,
+  updatedate: Date,
   updated: Boolean
 });
 

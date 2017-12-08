@@ -13,14 +13,12 @@
   "author": "'Adam <'haromrozsa@gmail.com'>",
   "license": "MIT",
   "dependencies": {
-    "async": "2.6.0",
     "cheerio": "1.0.0-rc.2",
     "cors": "2.8.4",
     "express": "4.16.2",
     "htmlparser2": "3.9.2",
     "mailgun-js": "0.13.1",
     "mongoose": "4.13.4",
-    "node-schedule": "1.2.5",
     "nodemon": "1.12.1",
     "sentiment": "4.1.0"
   },
