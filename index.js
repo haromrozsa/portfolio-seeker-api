@@ -280,7 +280,11 @@ app.get('/data/:forumname', cors(), function (req, res, next) {
 
 app.get('/', cors(), function (req, res, next) {
   console.log("Wake up request arrived");
-  res.json('Wake up request arrived and returned');
+  Forum.find({}).select({ name: 1 }).exec(function(err, dbForum) {
+    var forumNames = dbForum.map(a => a.name);
+    console.log("DB Forum names: " + forumNames);
+    res.json(forumNames);
+  });
 });
 
 app.get('/email/:forumname', cors(), function (req, res, next) {
