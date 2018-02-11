@@ -18,14 +18,22 @@
 				  <option value="APPENINN">Appenin</option>
 				  <option value="TWDINVEST">TWD</option>
 				</select>
-				Moving Average:
+				Moving Average 1:
 				<select id="movingAverageDD">
 					<option value="5">5</option>
 					<option value="10">10</option>
+					<option value="20" selected="selected">20</option>
+				</select>
+				Moving Average 2:
+				<select id="movingAverageDD2">
+					<option value="10">10</option>
 					<option value="20">20</option>
-				</select>Weekends included
-				<input id="weekend" type="checkbox" checked>
-				<!--Forum name: <input type="text" name="ForumName" value="OPUS" id="inputForum">
+					<option value="50" selected="selected">50</option>
+					<option value="100">100</option>
+				</select>
+				Weekends included
+				<input id="weekend" type="checkbox">
+				<!--Forum name: <input type="text" name="ForumName" value="OPUS" id="inputForum" checked>
 				<input type="submit" value="Submit">-->
 		</div>
 		<!--<div style="display: block; width: 90%; height: 90%;">-->
@@ -37,6 +45,8 @@
 		<script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
 		<script>
 			var ctx = document.getElementById("myChart").getContext('2d');
+			//var holidays = [new Date(2017, 0, 1), new Date(2018, 0, 1), new Date(2017, 9, 23), new Date(2018, 10, 23)];
+			var holidays = ["2017.1.1.", "2018.1.1", "2017.10.23.", "2017.11.01.", "2017.12.25", "2017.12.26"];
 			var myChart = new Chart(ctx, {
 				type: 'line',
 				"options":{
@@ -55,6 +65,9 @@
 				 getForumData($('#inputForum').val());
 			});
 			$("#weekend").change(function(e) {
+				 getForumData($('#inputForum').val());
+			});
+			$("#movingAverageDD2").change(function(e) {
 				 getForumData($('#inputForum').val());
 			});
 		function getForumData(forumName) {
@@ -101,8 +114,9 @@
 			var objcounter = [];
 			for(var i = 0; i < obj.length;i++) {
 				var newmydate = new Date(obj[i].date);
-				console.log(newmydate);
-				if (isWeekendIncluded || !(newmydate.getDay() == 6 || newmydate.getDay() == 0)) {
+				console.log(obj[i].date);
+				console.log(holidays.indexOf(obj[i].date));
+				if (isWeekendIncluded || !((newmydate.getDay() == 6 || newmydate.getDay() == 0)) && holidays.indexOf(obj[i].date) == -1) {
 					if (obj[i].date.startsWith("2017") || obj[i].date.startsWith("2018")) {
 						objcounter.push(obj[i].count);
 						objdates.push(obj[i].date);
@@ -122,6 +136,12 @@
 					"data":moveMean,
 					"fill":false,
 					"borderColor":"rgb(255, 0, 0)",
+					"lineTension":0.0
+				},
+				{"label":$('#inputForum').val() + " forum data MA(" + $('#movingAverageDD2').val() + ")",
+					"data":ma(objcounter, $('#movingAverageDD2').val()),
+					"fill":false,
+					"borderColor":"rgb(255, 0, 255)",
 					"lineTension":0.0
 				}
 			];
