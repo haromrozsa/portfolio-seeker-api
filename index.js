@@ -146,9 +146,11 @@ var parseResponse = function(response, isInit, callback) {
 		}
 
 		//$('div .upRow').children('div .date').each(function(i, elem) {
+    var logToday = [];
+    var logElseDay =  [];
     $('div .upRow').each(function(i, elem) {
 			var dateText = $(this).children('div .date').text();
-    //  var sequence = $(this).children('div .postNumber').text();
+      var sequence = $(this).children('div .postNumber').text();
 			var dateTextSplitted;
 			if (dateText.indexOf(",") != -1) {
 				dateTextSplitted = parseToDate(dateText.split(",")[0].trim(), isInit);
@@ -157,15 +159,20 @@ var parseResponse = function(response, isInit, callback) {
 			}
 			isToday = dateTextSplitted.indexOf("ma") != -1;
 			isYesterday = dateTextSplitted.indexOf("tegnap") != -1;
+
 			if(tags.indexOf(dateTextSplitted) === -1) {
 				if (!isToday) {
+          logToday.push(sequence);
           tags.push(dateTextSplitted);
 					tagsCount[dateTextSplitted] = 1;
 				}
 			} else {
+        logElseDay.push(sequence);
 				tagsCount[dateTextSplitted]++;
 			}
 		});
+    console.log("Not today on page: " + logToday + " " + siteNumber + " " + url);
+    console.log("Existed on page: " + logElseDay + " " + siteNumber + " " + url);
 		if (siteNumber > 0 && (isInit || isYesterday)) {
 			var newUrl = url + "&oldal=" + siteNumber;
 			console.log(newUrl);
@@ -208,7 +215,16 @@ var updateForum = function(urlItem) {
                     parseResponse(response, false, function() {
                       var tagsWithCountAndToday = JSON.parse(dbForum.data);
                       var date = new Date();
-                      tagsWithCountAndToday.unshift({date:date.getFullYear() + "." + (date.getMonth() + 1) + "." + (date.getDate()-1), count:tagsCount[tags[0]]});
+                      date.setDate(date.getDate()-1);
+                      console.log("----tagsWithCountAndToday----");
+                      console.log(tagsCount);
+                      //console.log(tags[0]);
+                      if (tags[0].indexOf("tegnap") != -1) {
+                        tagsWithCountAndToday.unshift({date:date.getFullYear() + "." + (date.getMonth() + 1) + "." + (date.getDate()), count:tagsCount[tags[0]]});
+                      } else {
+                        console.log("No new forum entry on yesterday: " + url);
+                        tagsWithCountAndToday.unshift({date:date.getFullYear() + "." + (date.getMonth() + 1) + "." + (date.getDate()), count:0});
+                      }
                       dbForum.data = JSON.stringify(tagsWithCountAndToday);
                       dbForum.updatedate = date;
                       //dbForum.updated = true;
@@ -226,6 +242,8 @@ var updateForum = function(urlItem) {
 }
 
 app.get('/init/:forumname/:forumUrl', cors(), function (req, res, next) {
+  //http://localhost:8081/init/TWDINVEST/https:%2F%2Fforum.portfolio.hu%2Ftopics%2Ftwdinvest%2F20191%3Flimit=100
+  //
   console.log("Request arrived with name and url " + req.params.forumname + " " + req.params.forumUrl);
   url = req.params.forumUrl;
   if (!req.params.forumname || !url) {

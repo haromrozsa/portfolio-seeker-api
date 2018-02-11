@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style type="text/css">
+			.center {
+			    margin: auto;
+			    width: 90%;
+			    padding: 10px;
+					text-align: center;
+			}
+    </style>
+	</head>
+	<body>
+		<div class="center" >
+				Forum name:
+				<select id="inputForum">
+				  <option value="OPUS">Opus</option>
+				  <option value="APPENINN">Appenin</option>
+				  <option value="TWDINVEST">TWD</option>
+				</select>
+				Moving Average:
+				<select id="movingAverageDD">
+					<option value="5">5</option>
+					<option value="10">10</option>
+					<option value="20">20</option>
+				</select>
+				<!--Forum name: <input type="text" name="ForumName" value="OPUS" id="inputForum">
+				<input type="submit" value="Submit">-->
+		</div>
+		<!--<div style="display: block; width: 90%; height: 90%;">-->
+		<div class="center">
+			<canvas id="myChart"></canvas>
+		</div>
+		<script src="node_modules/chart.js/dist/Chart.js"></script>
+		<script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+		<script>
+			var ctx = document.getElementById("myChart").getContext('2d');
+			var myChart = new Chart(ctx, {
+				type: 'line',
+				"options":{
+					elements: {
+							point: {
+									//radius: 0
+							}
+					}
+				}
+			});
+			getForumData("OPUS");
+			$("#inputForum").change(function(e) {
+				 getForumData($('#inputForum').val());
+			});
+			$("#movingAverageDD").change(function(e) {
+				 getForumData($('#inputForum').val());
+			});
+		function getForumData(forumName) {
+			$.ajax({
+				 url: "https://portfolio-seeker-api.herokuapp.com/data/" + forumName,
+				 data: {
+					format: 'json'
+				 },
+				 error: function( textStatus, errorThrown, text) {
+					console.log(textStatus);
+					console.log(errorThrown);
+					console.log(text);
+					alert("error");
+				 },
+				 //dataType: 'jsonp',
+				 success: function(opusdata) {
+					//alert(data);
+
+					createChart(opusdata)
+				 },
+				 type: 'GET'
+			});
+			//e.preventDefault();
+		}
+
+		function ma(origdataset, average) {
+			var moveMean = [];
+			for (var i = average -1 ; i < origdataset.length; i++)
+			{
+					var mean = 0;
+					for (var j = 0 ; j < average; j++) {
+						mean += origdataset[i-j];
+					}
+			    moveMean.push(mean/average);
+			}
+			return moveMean;
+		}
+
+		function createChart(opusdata) {
+			var response = opusdata;
+			var obj = JSON.parse(response);
+			var objdates = [];
+			var objcounter = [];
+			for(var i = 0; i < obj.length;i++) {
+				if (obj[i].date.startsWith("2017") || obj[i].date.startsWith("2018")) {
+					objcounter.push(obj[i].count);
+					objdates.push(obj[i].date);
+				}
+			}
+			var moveMean = ma(objcounter, $('#movingAverageDD').val());
+
+			var datasets = [
+				{"label":$('#inputForum').val() + " forum data",
+				"data":objcounter,
+				"fill":false,
+				"borderColor":"rgb(75, 192, 192)",
+				"lineTension":0.0
+			},{"label":$('#inputForum').val() + " forum data MA(" + $('#movingAverageDD').val() + ")",
+				"data":moveMean,
+				"fill":false,
+				"borderColor":"rgb(255, 0, 0)",
+				"lineTension":0.0
+			}
+			];
+			myChart.data.datasets = datasets;
+			myChart.data.labels = objdates;
+			myChart.update()
+		}
+		</script>
+	</body>
+</html>
