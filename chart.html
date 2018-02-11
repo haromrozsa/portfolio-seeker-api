@@ -23,7 +23,8 @@
 					<option value="5">5</option>
 					<option value="10">10</option>
 					<option value="20">20</option>
-				</select>
+				</select>Weekends included
+				<input id="weekend" type="checkbox" checked>
 				<!--Forum name: <input type="text" name="ForumName" value="OPUS" id="inputForum">
 				<input type="submit" value="Submit">-->
 		</div>
@@ -51,6 +52,9 @@
 				 getForumData($('#inputForum').val());
 			});
 			$("#movingAverageDD").change(function(e) {
+				 getForumData($('#inputForum').val());
+			});
+			$("#weekend").change(function(e) {
 				 getForumData($('#inputForum').val());
 			});
 		function getForumData(forumName) {
@@ -90,14 +94,19 @@
 		}
 
 		function createChart(opusdata) {
+			var isWeekendIncluded = $('#weekend').is( ":checked" );
 			var response = opusdata;
 			var obj = JSON.parse(response);
 			var objdates = [];
 			var objcounter = [];
 			for(var i = 0; i < obj.length;i++) {
-				if (obj[i].date.startsWith("2017") || obj[i].date.startsWith("2018")) {
-					objcounter.push(obj[i].count);
-					objdates.push(obj[i].date);
+				var newmydate = new Date(obj[i].date);
+				console.log(newmydate);
+				if (isWeekendIncluded || !(newmydate.getDay() == 6 || newmydate.getDay() == 0)) {
+					if (obj[i].date.startsWith("2017") || obj[i].date.startsWith("2018")) {
+						objcounter.push(obj[i].count);
+						objdates.push(obj[i].date);
+					}
 				}
 			}
 			var moveMean = ma(objcounter, $('#movingAverageDD').val());
