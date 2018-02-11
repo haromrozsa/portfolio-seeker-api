@@ -339,6 +339,10 @@ app.get('/batch', cors(), function (req, res, next) {
   res.json(JSON.stringify("Started forum update"));
 });
 
+app.get('/chart', cors(), function(req, res, next){
+    res.sendFile(__dirname + '/chart.html');
+});
+
 const port = process.env.PORT || 8081;
 app.listen(port, function () {
   console.log('CORS-enabled web server listening: ' + new Date());

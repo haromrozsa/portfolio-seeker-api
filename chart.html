@@ -31,7 +31,8 @@
 		<div class="center">
 			<canvas id="myChart"></canvas>
 		</div>
-		<script src="node_modules/chart.js/dist/Chart.js"></script>
+		<!--<script src="node_modules/chart.js/dist/Chart.js"></script>-->
+	  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.js"></script>
 		<script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
 		<script>
 			var ctx = document.getElementById("myChart").getContext('2d');
@@ -103,16 +104,17 @@
 
 			var datasets = [
 				{"label":$('#inputForum').val() + " forum data",
-				"data":objcounter,
-				"fill":false,
-				"borderColor":"rgb(75, 192, 192)",
-				"lineTension":0.0
-			},{"label":$('#inputForum').val() + " forum data MA(" + $('#movingAverageDD').val() + ")",
-				"data":moveMean,
-				"fill":false,
-				"borderColor":"rgb(255, 0, 0)",
-				"lineTension":0.0
-			}
+					"data":objcounter,
+					"fill":false,
+					"borderColor":"rgb(75, 192, 192)",
+					"lineTension":0.0
+				},
+				{"label":$('#inputForum').val() + " forum data MA(" + $('#movingAverageDD').val() + ")",
+					"data":moveMean,
+					"fill":false,
+					"borderColor":"rgb(255, 0, 0)",
+					"lineTension":0.0
+				}
 			];
 			myChart.data.datasets = datasets;
 			myChart.data.labels = objdates;
