@@ -130,6 +130,8 @@ var sendEmail = function(result) {
 	});
 };
 
+var logToday = [];
+var logElseDay =  [];
 var parseResponse = function(response, isInit, callback) {
   var data = "";
 	var isToday;
@@ -144,10 +146,8 @@ var parseResponse = function(response, isInit, callback) {
 		} else  {
 			siteNumber--;
 		}
-
 		//$('div .upRow').children('div .date').each(function(i, elem) {
-    var logToday = [];
-    var logElseDay =  [];
+
     $('div .upRow').each(function(i, elem) {
 			var dateText = $(this).children('div .date').text();
       var sequence = $(this).children('div .postNumber').text();
@@ -173,7 +173,7 @@ var parseResponse = function(response, isInit, callback) {
 		});
     console.log("Not today on page: " + logToday + " " + siteNumber + " " + url);
     console.log("Existed on page: " + logElseDay + " " + siteNumber + " " + url);
-		if (siteNumber > 0 && (isInit || isYesterday)) {
+		if (siteNumber > 835 && (isInit || isYesterday)) {
 			var newUrl = url + "&oldal=" + siteNumber;
 			console.log(newUrl);
 			https.get(newUrl, function(response) {
@@ -206,6 +206,8 @@ var updateForum = function(urlItem) {
                   console.log("Already updated " + urlItem);
                 } else {
                   url = urlItem;
+                  logToday = [];
+                  logElseDay =  [];
                   tags = [];
                   tagsCount = {};
                   siteNumber = undefined;
@@ -243,7 +245,7 @@ var updateForum = function(urlItem) {
 
 app.get('/init/:forumname/:forumUrl', cors(), function (req, res, next) {
   //http://localhost:8081/init/TWDINVEST/https:%2F%2Fforum.portfolio.hu%2Ftopics%2Ftwdinvest%2F20191%3Flimit=100
-  //
+  //http://localhost:8081/init/APPENINN/https:%2F%2Fforum.portfolio.hu%2Ftopics%2Fappeninn%2F13459%3Flimit=100
   console.log("Request arrived with name and url " + req.params.forumname + " " + req.params.forumUrl);
   url = req.params.forumUrl;
   if (!req.params.forumname || !url) {
