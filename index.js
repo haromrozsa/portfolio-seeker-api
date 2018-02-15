@@ -173,7 +173,7 @@ var parseResponse = function(response, isInit, callback) {
 		});
     console.log("Not today on page: " + logToday + " " + siteNumber + " " + url);
     console.log("Existed on page: " + logElseDay + " " + siteNumber + " " + url);
-		if (siteNumber > 835 && (isInit || isYesterday)) {
+		if (siteNumber > 0 && (isInit || isYesterday)) {
 			var newUrl = url + "&oldal=" + siteNumber;
 			console.log(newUrl);
 			https.get(newUrl, function(response) {
